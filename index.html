@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Avoid & Shoot Survival Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="game-wrapper">
+    <h1>Avoid & Shoot Survival Game</h1>
+
+    <div class="hud">
+      <span id="score">Score: 0</span>
+      <span id="health">Health: 5</span>
+      <span id="time">Time: 0</span>
+    </div>
+
+    <canvas id="gameCanvas" width="900" height="600"></canvas>
+
+    <div class="controls">
+      <button id="startBtn">Start Game</button>
+      <button id="restartBtn">Restart</button>
+    </div>
+
+    <p class="info">
+      Move: WASD / Arrow Keys &nbsp; | &nbsp; Shoot: Space
+    </p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
