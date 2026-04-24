@@ -34,9 +34,7 @@ const player = {
 
 window.addEventListener('keydown', (e) => {
   keys[e.key] = true;
-  if (e.key === ' ') {
-    e.preventDefault();
-  }
+  if (e.key === ' ') e.preventDefault();
 });
 
 window.addEventListener('keyup', (e) => {
@@ -63,10 +61,14 @@ function resetGame() {
   difficultyTimer = 0;
   enemySpawnInterval = 1200;
   enemySpeedMultiplier = 1;
+
   player.x = canvas.width / 2;
   player.y = canvas.height / 2;
   player.health = 5;
   player.shootCooldown = 0;
+  player.facingX = 1;
+  player.facingY = 0;
+
   gameRunning = false;
   updateHUD();
   drawStartScreen('Game reset. Press Start Game');
@@ -111,10 +113,21 @@ function update(deltaTime) {
     enemySpawnTimer = 0;
   }
 
+  // Time-based difficulty increase
   if (difficultyTimer >= 10000) {
     difficultyTimer = 0;
     enemySpeedMultiplier += 0.15;
     enemySpawnInterval = Math.max(450, enemySpawnInterval - 80);
+  }
+
+  // Score-based difficulty increase
+  if (score >= 100 && score < 200) {
+    enemySpeedMultiplier = Math.max(enemySpeedMultiplier, 1.5);
+  }
+
+  if (score >= 200) {
+    enemySpeedMultiplier = Math.max(enemySpeedMultiplier, 2);
+    enemySpawnInterval = Math.min(enemySpawnInterval, 600);
   }
 
   updateBullets();
@@ -139,6 +152,7 @@ function movePlayer() {
 
     player.x += dx * player.speed;
     player.y += dy * player.speed;
+
     player.facingX = dx;
     player.facingY = dy;
   }
@@ -146,6 +160,7 @@ function movePlayer() {
 
 function containPlayer(obj) {
   const half = obj.size / 2;
+
   if (obj.x < half) obj.x = half;
   if (obj.x > canvas.width - half) obj.x = canvas.width - half;
   if (obj.y < half) obj.y = half;
@@ -167,6 +182,7 @@ function shootBullet() {
 function updateBullets() {
   for (let i = bullets.length - 1; i >= 0; i--) {
     const bullet = bullets[i];
+
     bullet.x += bullet.dx * bullet.speed;
     bullet.y += bullet.dy * bullet.speed;
 
@@ -200,8 +216,8 @@ function spawnEnemy() {
   }
 
   enemies.push({
-    x,
-    y,
+    x: x,
+    y: y,
     size: 28,
     speed: (1.3 + Math.random() * 1.2) * enemySpeedMultiplier,
     color: '#ef4444'
@@ -252,6 +268,29 @@ function updateHUD() {
   timeEl.textContent = `Time: ${Math.floor(gameTime)}`;
 }
 
+function drawBackground() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = '#1e1e1e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+
+  for (let x = 0; x < canvas.width; x += 50) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+
+  for (let y = 0; y < canvas.height; y += 50) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+}
+
 function drawPlayer() {
   ctx.fillStyle = player.color;
   ctx.beginPath();
@@ -281,35 +320,12 @@ function drawBullets() {
 function drawEnemies() {
   for (let enemy of enemies) {
     ctx.fillStyle = enemy.color;
-    ctx.beginPath();
-    ctx.rect(
+    ctx.fillRect(
       enemy.x - enemy.size / 2,
       enemy.y - enemy.size / 2,
       enemy.size,
       enemy.size
     );
-    ctx.fill();
-  }
-}
-
-function drawBackground() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = '#1e1e1e';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  for (let x = 0; x < canvas.width; x += 50) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
-    ctx.stroke();
-  }
-  for (let y = 0; y < canvas.height; y += 50) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
   }
 }
 
@@ -319,35 +335,32 @@ function draw() {
   drawBullets();
   drawEnemies();
 }
-for (let enemy of enemies) {
-  ctx.fillStyle = "red";
-  ctx.fillRect(
-    enemy.x - enemy.size / 2,
-    enemy.y - enemy.size / 2,
-    enemy.size,
-    enemy.size
-  );
-}
 
 function drawStartScreen(message = 'Press Start Game') {
   drawBackground();
+
   ctx.fillStyle = 'white';
-  ctx.font = '42px Arial';
   ctx.textAlign = 'center';
+
+  ctx.font = '42px Arial';
   ctx.fillText('Avoid & Shoot Survival', canvas.width / 2, canvas.height / 2 - 30);
+
   ctx.font = '24px Arial';
   ctx.fillText(message, canvas.width / 2, canvas.height / 2 + 20);
 }
 
 function drawGameOver() {
   draw();
+
   ctx.fillStyle = 'rgba(0,0,0,0.65)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = 'white';
   ctx.textAlign = 'center';
+
   ctx.font = '48px Arial';
   ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 20);
+
   ctx.font = '28px Arial';
   ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 30);
 }
