@@ -319,6 +319,15 @@ function draw() {
   drawBullets();
   drawEnemies();
 }
+for (let enemy of enemies) {
+  ctx.fillStyle = "red";
+  ctx.fillRect(
+    enemy.x - enemy.size / 2,
+    enemy.y - enemy.size / 2,
+    enemy.size,
+    enemy.size
+  );
+}
 
 function drawStartScreen(message = 'Press Start Game') {
   drawBackground();
