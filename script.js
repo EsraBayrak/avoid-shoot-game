@@ -60,14 +60,12 @@ restartBtn.addEventListener('click', resetGame);
 
 function animateMenu(message = 'Press Start Game') {
   if (gameRunning) return;
-
   drawStartScreen(message);
   menuAnimationId = requestAnimationFrame(() => animateMenu(message));
 }
 
 function startGame() {
   cancelAnimationFrame(menuAnimationId);
-
   if (gameRunning) return;
   gameRunning = true;
   lastTime = performance.now();
@@ -97,9 +95,6 @@ function resetGame() {
   player.x = canvas.width / 2;
   player.y = canvas.height / 2;
   player.health = MAX_HEALTH;
-  player.shootCooldown = 0;
-  player.facingX = 1;
-  player.facingY = 0;
 
   gameRunning = false;
   updateHUD();
@@ -135,14 +130,11 @@ function update(deltaTime) {
   movePlayer();
   containPlayer(player);
 
-  if (player.shootCooldown > 0) {
-    player.shootCooldown -= deltaTime;
-  }
-
   if (keys[' '] && player.shootCooldown <= 0) {
     shootBullet();
     player.shootCooldown = 250;
   }
+  if (player.shootCooldown > 0) player.shootCooldown -= deltaTime;
 
   if (enemySpawnTimer >= enemySpawnInterval) {
     spawnEnemy();
@@ -177,20 +169,17 @@ function updateLevel() {
     enemySpeedMultiplier += 0.12;
     enemySpawnInterval = Math.max(450, enemySpawnInterval - 80);
 
-    if (level % 3 === 0) {
-      spawnBossEnemy();
-    }
+    if (level % 3 === 0) spawnBossEnemy();
   }
 }
 
 function movePlayer() {
-  let dx = 0;
-  let dy = 0;
+  let dx = 0, dy = 0;
 
-  if (keys['ArrowUp'] || keys['w']) dy -= 1;
-  if (keys['ArrowDown'] || keys['s']) dy += 1;
-  if (keys['ArrowLeft'] || keys['a']) dx -= 1;
-  if (keys['ArrowRight'] || keys['d']) dx += 1;
+  if (keys['w'] || keys['ArrowUp']) dy--;
+  if (keys['s'] || keys['ArrowDown']) dy++;
+  if (keys['a'] || keys['ArrowLeft']) dx--;
+  if (keys['d'] || keys['ArrowRight']) dx++;
 
   if (dx !== 0 || dy !== 0) {
     const len = Math.sqrt(dx * dx + dy * dy);
@@ -199,7 +188,6 @@ function movePlayer() {
 
     player.x += dx * player.speed;
     player.y += dy * player.speed;
-
     player.facingX = dx;
     player.facingY = dy;
   }
@@ -223,21 +211,8 @@ function shootBullet() {
   });
 }
 
-function updateBullets() {
-  for (let i = bullets.length - 1; i >= 0; i--) {
-    const b = bullets[i];
-    b.x += b.dx * b.speed;
-    b.y += b.dy * b.speed;
-
-    if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
-      bullets.splice(i, 1);
-    }
-  }
-}
-
 function spawnEnemy() {
   const pos = getRandomEdgePosition();
-
   enemies.push({
     x: pos.x,
     y: pos.y,
@@ -252,7 +227,6 @@ function spawnEnemy() {
 
 function spawnBossEnemy() {
   const pos = getRandomEdgePosition();
-
   enemies.push({
     x: pos.x,
     y: pos.y,
@@ -267,71 +241,55 @@ function spawnBossEnemy() {
 
 function getRandomEdgePosition() {
   const side = Math.floor(Math.random() * 4);
-  let x, y;
-
-  if (side === 0) {
-    x = Math.random() * canvas.width;
-    y = -40;
-  } else if (side === 1) {
-    x = canvas.width + 40;
-    y = Math.random() * canvas.height;
-  } else if (side === 2) {
-    x = Math.random() * canvas.width;
-    y = canvas.height + 40;
-  } else {
-    x = -40;
-    y = Math.random() * canvas.height;
-  }
-
-  return { x, y };
+  if (side === 0) return { x: Math.random() * canvas.width, y: -40 };
+  if (side === 1) return { x: canvas.width + 40, y: Math.random() * canvas.height };
+  if (side === 2) return { x: Math.random() * canvas.width, y: canvas.height + 40 };
+  return { x: -40, y: Math.random() * canvas.height };
 }
 
 function spawnHealthPack() {
   healthPacks.push({
-    x: Math.random() * (canvas.width - 80) + 40,
-    y: Math.random() * (canvas.height - 80) + 40,
-    size: 24,
-    color: '#22c55e'
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size: 24
   });
 }
 
-function createExplosion(x, y, color = '#f97316') {
-  for (let i = 0; i < 16; i++) {
-    particles.push({
-      x,
-      y,
-      size: Math.random() * 5 + 2,
-      speedX: (Math.random() - 0.5) * 6,
-      speedY: (Math.random() - 0.5) * 6,
-      life: 35,
-      color
-    });
-  }
-}
-
-function updateParticles() {
-  for (let i = particles.length - 1; i >= 0; i--) {
-    let p = particles[i];
-    p.x += p.speedX;
-    p.y += p.speedY;
-    p.life--;
-    p.size *= 0.96;
-
-    if (p.life <= 0) {
-      particles.splice(i, 1);
-    }
-  }
+function updateBullets() {
+  bullets = bullets.filter(b => {
+    b.x += b.dx * b.speed;
+    b.y += b.dy * b.speed;
+    return b.x > 0 && b.x < canvas.width && b.y > 0 && b.y < canvas.height;
+  });
 }
 
 function updateEnemies() {
-  for (let e of enemies) {
+  enemies.forEach(e => {
     const dx = player.x - e.x;
     const dy = player.y - e.y;
     const d = Math.sqrt(dx * dx + dy * dy) || 1;
-
     e.x += (dx / d) * e.speed;
     e.y += (dy / d) * e.speed;
-    e.angle += 0.05;
+  });
+}
+
+function updateParticles() {
+  particles = particles.filter(p => {
+    p.x += p.speedX;
+    p.y += p.speedY;
+    p.life--;
+    return p.life > 0;
+  });
+}
+
+function createExplosion(x, y) {
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      x, y,
+      speedX: (Math.random() - 0.5) * 6,
+      speedY: (Math.random() - 0.5) * 6,
+      life: 30
+    });
   }
 }
 
@@ -341,44 +299,41 @@ function isColliding(a, b) {
 }
 
 function checkCollisions() {
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    if (isColliding(player, enemies[i])) {
-      createExplosion(enemies[i].x, enemies[i].y);
-      enemies.splice(i, 1);
+  enemies.forEach((e, ei) => {
+    if (isColliding(player, e)) {
+      enemies.splice(ei, 1);
       player.health--;
-      screenShake = 15;
+      screenShake = 10;
     }
-  }
+  });
 
-  for (let i = bullets.length - 1; i >= 0; i--) {
-    for (let j = enemies.length - 1; j >= 0; j--) {
-      if (isColliding(bullets[i], enemies[j])) {
-        createExplosion(enemies[j].x, enemies[j].y);
-        bullets.splice(i, 1);
-        enemies[j].health--;
-
-        if (enemies[j].health <= 0) {
-          score += enemies[j].type === 'boss' ? 50 : 10;
-          enemies.splice(j, 1);
-        }
-        break;
+  bullets.forEach((b, bi) => {
+    enemies.forEach((e, ei) => {
+      if (isColliding(b, e)) {
+        createExplosion(e.x, e.y);
+        bullets.splice(bi, 1);
+        enemies.splice(ei, 1);
+        score += e.type === 'boss' ? 50 : 10;
       }
-    }
-  }
+    });
+  });
 
-  for (let i = healthPacks.length - 1; i >= 0; i--) {
-    if (isColliding(player, healthPacks[i])) {
-      healthPacks.splice(i, 1);
+  healthPacks.forEach((h, hi) => {
+    if (isColliding(player, h)) {
+      healthPacks.splice(hi, 1);
       player.health = Math.min(player.health + 1, MAX_HEALTH);
-      createExplosion(player.x, player.y, '#22c55e');
     }
-  }
+  });
 }
 
 function updateHUD() {
   scoreEl.textContent = `Score: ${score} | Level: ${level}`;
-  healthEl.textContent = `Health: ${player.health}`;
+  healthEl.textContent = `HP: ${player.health}`;
   timeEl.textContent = `Time: ${Math.floor(gameTime)} | Best: ${bestScore}`;
+
+  if (player.health > 7) healthEl.style.color = "lime";
+  else if (player.health > 3) healthEl.style.color = "yellow";
+  else healthEl.style.color = "red";
 }
 
 function saveBestScore() {
@@ -389,151 +344,47 @@ function saveBestScore() {
 }
 
 function draw() {
-  ctx.save();
-
-  if (screenShake > 0) {
-    ctx.translate(
-      (Math.random() - 0.5) * screenShake,
-      (Math.random() - 0.5) * screenShake
-    );
-  }
-
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#1e1e1e';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  drawHealthPacks();
   drawPlayer();
-  drawBullets();
   drawEnemies();
-  drawParticles();
-
-  ctx.restore();
+  drawBullets();
 }
 
 function drawPlayer() {
-  ctx.fillStyle = player.color;
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, player.size / 2, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = 'white';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(player.x, player.y);
-  ctx.lineTo(
-    player.x + player.facingX * 20,
-    player.y + player.facingY * 20
-  );
-  ctx.stroke();
-}
-
-function drawBullets() {
-  bullets.forEach(b => {
-    ctx.fillStyle = b.color;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, b.size / 2, 0, Math.PI * 2);
-    ctx.fill();
-  });
+  ctx.fillStyle = "green";
+  ctx.fillRect(player.x, player.y, 30, 30);
 }
 
 function drawEnemies() {
-  enemies.forEach(e => {
-    ctx.save();
-    ctx.translate(e.x, e.y);
-    ctx.rotate(e.angle);
-
-    ctx.fillStyle = e.color;
-    ctx.fillRect(-e.size / 2, -e.size / 2, e.size, e.size);
-
-    if (e.type === 'boss') {
-      ctx.fillStyle = 'white';
-      ctx.font = '16px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('BOSS', 0, 5);
-    }
-
-    ctx.restore();
-  });
+  ctx.fillStyle = "red";
+  enemies.forEach(e => ctx.fillRect(e.x, e.y, e.size, e.size));
 }
 
-function drawParticles() {
-  particles.forEach(p => {
-    ctx.globalAlpha = p.life / 35;
-    ctx.fillStyle = p.color;
-    ctx.fillRect(p.x, p.y, p.size, p.size);
-    ctx.globalAlpha = 1;
-  });
+function drawBullets() {
+  ctx.fillStyle = "yellow";
+  bullets.forEach(b => ctx.fillRect(b.x, b.y, 5, 5));
 }
 
-function drawHealthPacks() {
-  healthPacks.forEach(h => {
-    ctx.fillStyle = h.color;
-    ctx.beginPath();
-    ctx.arc(h.x, h.y, h.size / 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = 'white';
-    ctx.font = '18px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('+', h.x, h.y + 6);
-  });
-}
-
-function drawStartScreen(msg = 'Press Start Game') {
-  menuTime += 0.05;
-
+function drawStartScreen(msg) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#1e1e1e';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const y = canvas.height / 2 + Math.sin(menuTime) * 10;
-  const alpha = 0.5 + Math.sin(menuTime * 2) * 0.5;
-
-  ctx.fillStyle = 'white';
-  ctx.textAlign = 'center';
-
-  ctx.font = '46px Arial';
-  ctx.fillText('Avoid & Shoot Survival', canvas.width / 2, y - 50);
-
-  ctx.globalAlpha = alpha;
-  ctx.font = '24px Arial';
-  ctx.fillText(msg, canvas.width / 2, y + 10);
-  ctx.globalAlpha = 1;
-
-  ctx.font = '18px Arial';
-  ctx.fillText('Move: WASD / Arrow Keys | Shoot: Space', canvas.width / 2, y + 50);
-
-  ctx.font = '18px Arial';
-  ctx.fillText(`Best Score: ${bestScore}`, canvas.width / 2, y + 85);
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  ctx.font = "30px Arial";
+  ctx.fillText(msg, canvas.width / 2, canvas.height / 2);
 }
 
 function drawGameOver() {
-  draw();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
 
-  ctx.fillStyle = 'rgba(0,0,0,0.75)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = "40px Arial";
+  ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 50);
 
-  ctx.fillStyle = 'white';
-  ctx.textAlign = 'center';
+  ctx.font = "25px Arial";
+  ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2);
 
-  ctx.font = '52px Arial';
-  ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 110);
-
-  ctx.font = '30px Arial';
-  ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 - 45);
-
-  ctx.font = '28px Arial';
-  ctx.fillText(`Best Score: ${bestScore}`, canvas.width / 2, canvas.height / 2);
-
-  ctx.font = '24px Arial';
-  ctx.fillText(`Survival Time: ${Math.floor(gameTime)} seconds`, canvas.width / 2, canvas.height / 2 + 45);
-
-  ctx.font = '24px Arial';
-  ctx.fillText(`Reached Level: ${level}`, canvas.width / 2, canvas.height / 2 + 85);
-
-  ctx.font = '20px Arial';
-  ctx.fillText('Press Restart to play again', canvas.width / 2, canvas.height / 2 + 130);
+  ctx.fillText(`Best Score: ${bestScore}`, canvas.width / 2, canvas.height / 2 + 40);
 }
 
 updateHUD();
