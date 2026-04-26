@@ -351,8 +351,20 @@ function draw() {
 }
 
 function drawPlayer() {
-  ctx.fillStyle = "green";
-  ctx.fillRect(player.x, player.y, 30, 30);
+  ctx.fillStyle = player.color;
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.size / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(player.x, player.y);
+  ctx.lineTo(
+    player.x + player.facingX * 20,
+    player.y + player.facingY * 20
+  );
+  ctx.stroke();
 }
 
 function drawEnemies() {
