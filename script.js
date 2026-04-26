@@ -14,6 +14,7 @@ let particles = [];
 let healthPacks = [];
 
 let score = 0;
+let highScore = Number(localStorage.getItem('avoidShootHighScore')) || 0;
 let gameTime = 0;
 let wave = 1;
 let gameRunning = false;
@@ -25,6 +26,9 @@ let difficultyTimer = 0;
 let enemySpawnInterval = 1200;
 let enemySpeedMultiplier = 1;
 let lastTime = 0;
+
+let screenShake = 0;
+let menuTime = 0;
 
 const player = {
   x: canvas.width / 2,
@@ -74,6 +78,7 @@ function resetGame() {
   difficultyTimer = 0;
   enemySpawnInterval = 1200;
   enemySpeedMultiplier = 1;
+  screenShake = 0;
 
   player.x = canvas.width / 2;
   player.y = canvas.height / 2;
@@ -100,6 +105,7 @@ function gameLoop(timestamp) {
     animationId = requestAnimationFrame(gameLoop);
   } else {
     gameRunning = false;
+    saveHighScore();
     drawGameOver();
   }
 }
@@ -138,6 +144,10 @@ function update(deltaTime) {
     difficultyTimer = 0;
     enemySpeedMultiplier += 0.12;
     enemySpawnInterval = Math.max(450, enemySpawnInterval - 70);
+  }
+
+  if (screenShake > 0) {
+    screenShake--;
   }
 
   updateBullets();
@@ -337,6 +347,7 @@ function checkCollisions() {
       createExplosion(enemies[i].x, enemies[i].y, enemies[i].color);
       enemies.splice(i, 1);
       player.health -= 1;
+      screenShake = 18;
     }
   }
 
@@ -376,7 +387,14 @@ function checkCollisions() {
 function updateHUD() {
   scoreEl.textContent = `Score: ${score} | Wave: ${wave}`;
   healthEl.textContent = `Health: ${player.health}`;
-  timeEl.textContent = `Time: ${Math.floor(gameTime)}`;
+  timeEl.textContent = `Time: ${Math.floor(gameTime)} | High Score: ${highScore}`;
+}
+
+function saveHighScore() {
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('avoidShootHighScore', highScore);
+  }
 }
 
 function drawBackground() {
@@ -437,25 +455,18 @@ function drawEnemies() {
 
     ctx.fillStyle = enemy.color;
 
-    if (enemy.type === 'boss') {
-      ctx.fillRect(
-        -enemy.size / 2,
-        -enemy.size / 2,
-        enemy.size,
-        enemy.size
-      );
+    ctx.fillRect(
+      -enemy.size / 2,
+      -enemy.size / 2,
+      enemy.size,
+      enemy.size
+    );
 
+    if (enemy.type === 'boss') {
       ctx.fillStyle = 'white';
       ctx.font = '16px Arial';
       ctx.textAlign = 'center';
       ctx.fillText('BOSS', 0, 5);
-    } else {
-      ctx.fillRect(
-        -enemy.size / 2,
-        -enemy.size / 2,
-        enemy.size,
-        enemy.size
-      );
     }
 
     ctx.restore();
@@ -486,28 +497,48 @@ function drawHealthPacks() {
 }
 
 function draw() {
+  ctx.save();
+
+  if (screenShake > 0) {
+    const shakeX = (Math.random() - 0.5) * screenShake;
+    const shakeY = (Math.random() - 0.5) * screenShake;
+    ctx.translate(shakeX, shakeY);
+  }
+
   drawBackground();
   drawHealthPacks();
   drawPlayer();
   drawBullets();
   drawEnemies();
   drawParticles();
+
+  ctx.restore();
 }
 
 function drawStartScreen(message = 'Press Start Game') {
+  menuTime += 0.05;
+
   drawBackground();
+
+  const titleY = canvas.height / 2 - 55 + Math.sin(menuTime) * 8;
+  const blinkAlpha = 0.5 + Math.sin(menuTime * 2) * 0.5;
 
   ctx.fillStyle = 'white';
   ctx.textAlign = 'center';
 
-  ctx.font = '42px Arial';
-  ctx.fillText('Avoid & Shoot Survival', canvas.width / 2, canvas.height / 2 - 45);
+  ctx.font = '46px Arial';
+  ctx.fillText('Avoid & Shoot Survival', canvas.width / 2, titleY);
 
+  ctx.globalAlpha = blinkAlpha;
   ctx.font = '24px Arial';
-  ctx.fillText(message, canvas.width / 2, canvas.height / 2 + 5);
+  ctx.fillText(message, canvas.width / 2, canvas.height / 2 + 10);
+  ctx.globalAlpha = 1;
 
   ctx.font = '18px Arial';
-  ctx.fillText('Move: WASD / Arrow Keys | Shoot: Space', canvas.width / 2, canvas.height / 2 + 45);
+  ctx.fillText('Move: WASD / Arrow Keys | Shoot: Space', canvas.width / 2, canvas.height / 2 + 50);
+
+  ctx.font = '18px Arial';
+  ctx.fillText(`High Score: ${highScore}`, canvas.width / 2, canvas.height / 2 + 85);
 }
 
 function drawGameOver() {
@@ -520,28 +551,30 @@ function drawGameOver() {
   ctx.textAlign = 'center';
 
   ctx.font = '52px Arial';
-  ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 95);
+  ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 110);
 
   ctx.font = '28px Arial';
-  ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 - 35);
+  ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 - 50);
+
+  ctx.fillText(`High Score: ${highScore}`, canvas.width / 2, canvas.height / 2 - 10);
 
   ctx.fillText(
     `Survival Time: ${Math.floor(gameTime)} seconds`,
     canvas.width / 2,
-    canvas.height / 2 + 10
+    canvas.height / 2 + 30
   );
 
   ctx.fillText(
     `Reached Wave: ${wave}`,
     canvas.width / 2,
-    canvas.height / 2 + 55
+    canvas.height / 2 + 70
   );
 
   ctx.font = '22px Arial';
   ctx.fillText(
     'Press Restart to play again',
     canvas.width / 2,
-    canvas.height / 2 + 105
+    canvas.height / 2 + 120
   );
 }
 
