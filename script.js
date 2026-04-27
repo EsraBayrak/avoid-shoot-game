@@ -26,13 +26,13 @@ let menuTime = 0;
 let enemySpawnTimer = 0;
 let healthPackTimer = 0;
 let difficultyTimer = 0;
-let enemySpawnInterval = 1200;
+let enemySpawnInterval = 1400;
 let enemySpeedMultiplier = 1;
 let lastTime = 0;
 
 let screenShake = 0;
 
-const MAX_HEALTH = 10;
+const MAX_HEALTH = 15;
 
 const player = {
   x: canvas.width / 2,
@@ -60,7 +60,6 @@ restartBtn.addEventListener('click', resetGame);
 
 function animateMenu(message = 'Press Start Game') {
   if (gameRunning) return;
-
   drawStartScreen(message);
   menuAnimationId = requestAnimationFrame(() => animateMenu(message));
 }
@@ -82,7 +81,7 @@ function startGame() {
   enemySpawnTimer = 0;
   healthPackTimer = 0;
   difficultyTimer = 0;
-  enemySpawnInterval = 1200;
+  enemySpawnInterval = 1400;
   enemySpeedMultiplier = 1;
   screenShake = 0;
 
@@ -114,7 +113,7 @@ function resetGame() {
   enemySpawnTimer = 0;
   healthPackTimer = 0;
   difficultyTimer = 0;
-  enemySpawnInterval = 1200;
+  enemySpawnInterval = 1400;
   enemySpeedMultiplier = 1;
   screenShake = 0;
 
@@ -172,15 +171,15 @@ function update(deltaTime) {
     enemySpawnTimer = 0;
   }
 
-  if (healthPackTimer >= 12000) {
+  if (healthPackTimer >= 10000) {
     spawnHealthPack();
     healthPackTimer = 0;
   }
 
   if (difficultyTimer >= 10000) {
     difficultyTimer = 0;
-    enemySpeedMultiplier += 0.08;
-    enemySpawnInterval = Math.max(500, enemySpawnInterval - 50);
+    enemySpeedMultiplier += 0.05;
+    enemySpawnInterval = Math.max(650, enemySpawnInterval - 40);
   }
 
   if (screenShake > 0) {
@@ -195,14 +194,14 @@ function update(deltaTime) {
 }
 
 function updateLevel() {
-  const newLevel = Math.floor(gameTime / 10) + 1;
+  const newLevel = Math.floor(gameTime / 7) + 1;
 
   if (newLevel > level) {
     level = newLevel;
-    enemySpeedMultiplier += 0.12;
-    enemySpawnInterval = Math.max(450, enemySpawnInterval - 80);
+    enemySpeedMultiplier += 0.08;
+    enemySpawnInterval = Math.max(600, enemySpawnInterval - 60);
 
-    if (level % 3 === 0) {
+    if (level === 2 || level % 3 === 0) {
       spawnBossEnemy();
     }
   }
@@ -276,7 +275,7 @@ function spawnEnemy() {
     x: pos.x,
     y: pos.y,
     size: 28,
-    speed: (1.2 + Math.random()) * enemySpeedMultiplier,
+    speed: (0.8 + Math.random() * 0.6) * enemySpeedMultiplier,
     color: '#ef4444',
     health: 1,
     type: 'normal',
@@ -291,7 +290,7 @@ function spawnBossEnemy() {
     x: pos.x,
     y: pos.y,
     size: 55,
-    speed: 0.7 * enemySpeedMultiplier,
+    speed: 0.45 * enemySpeedMultiplier,
     color: '#a855f7',
     health: 5,
     type: 'boss',
@@ -426,9 +425,9 @@ function updateHUD() {
   healthEl.textContent = `HP: ${player.health}`;
   timeEl.textContent = `Time: ${Math.floor(gameTime)} | Best: ${bestScore}`;
 
-  if (player.health > 7) {
+  if (player.health > 10) {
     healthEl.style.color = 'lime';
-  } else if (player.health > 3) {
+  } else if (player.health > 5) {
     healthEl.style.color = 'yellow';
   } else {
     healthEl.style.color = 'red';
