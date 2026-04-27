@@ -66,7 +66,6 @@ function animateMenu(message = 'Press Start Game') {
 
 function startGame() {
   cancelAnimationFrame(menuAnimationId);
-
   if (gameRunning) return;
 
   bullets = [];
@@ -157,9 +156,7 @@ function update(deltaTime) {
   movePlayer();
   containPlayer(player);
 
-  if (player.shootCooldown > 0) {
-    player.shootCooldown -= deltaTime;
-  }
+  if (player.shootCooldown > 0) player.shootCooldown -= deltaTime;
 
   if (keys[' '] && player.shootCooldown <= 0) {
     shootBullet();
@@ -182,9 +179,7 @@ function update(deltaTime) {
     enemySpawnInterval = Math.max(650, enemySpawnInterval - 40);
   }
 
-  if (screenShake > 0) {
-    screenShake--;
-  }
+  if (screenShake > 0) screenShake--;
 
   updateBullets();
   updateEnemies();
@@ -223,7 +218,6 @@ function movePlayer() {
 
     player.x += dx * player.speed;
     player.y += dy * player.speed;
-
     player.facingX = dx;
     player.facingY = dy;
   }
@@ -327,7 +321,6 @@ function updateEnemies() {
 
     enemy.x += (dx / distance) * enemy.speed;
     enemy.y += (dy / distance) * enemy.speed;
-
     enemy.angle += 0.05;
   }
 }
@@ -341,14 +334,14 @@ function spawnHealthPack() {
   });
 }
 
-function createExplosion(x, y, color = '#f97316') {
-  for (let i = 0; i < 16; i++) {
+function createExplosion(x, y, color = '#f97316', count = 16, power = 6) {
+  for (let i = 0; i < count; i++) {
     particles.push({
       x: x,
       y: y,
       size: Math.random() * 5 + 2,
-      speedX: (Math.random() - 0.5) * 6,
-      speedY: (Math.random() - 0.5) * 6,
+      speedX: (Math.random() - 0.5) * power,
+      speedY: (Math.random() - 0.5) * power,
       life: 35,
       color: color
     });
@@ -395,10 +388,15 @@ function checkCollisions() {
         bullets.splice(i, 1);
         enemies[j].health -= 1;
 
+        if (enemies[j].type === 'boss') {
+          score += 25;
+        }
+
         if (enemies[j].health <= 0) {
           if (enemies[j].type === 'boss') {
-            score += 50;
-            createExplosion(enemies[j].x, enemies[j].y, '#a855f7');
+            createExplosion(enemies[j].x, enemies[j].y, '#a855f7', 40, 10);
+            createExplosion(enemies[j].x, enemies[j].y, '#facc15', 30, 12);
+            screenShake = 28;
           } else {
             score += 10;
           }
