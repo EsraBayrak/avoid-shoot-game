@@ -12,6 +12,7 @@ let bullets = [];
 let enemies = [];
 let particles = [];
 let healthPacks = [];
+let floatingTexts = [];
 
 let score = 0;
 let bestScore = Number(localStorage.getItem('avoidShootBestScore')) || 0;
@@ -72,6 +73,7 @@ function startGame() {
   enemies = [];
   particles = [];
   healthPacks = [];
+  floatingTexts = [];
 
   score = 0;
   gameTime = 0;
@@ -104,6 +106,7 @@ function resetGame() {
   enemies = [];
   particles = [];
   healthPacks = [];
+  floatingTexts = [];
 
   score = 0;
   gameTime = 0;
@@ -184,6 +187,7 @@ function update(deltaTime) {
   updateBullets();
   updateEnemies();
   updateParticles();
+  updateFloatingTexts();
   checkCollisions();
   updateHUD();
 }
@@ -286,7 +290,7 @@ function spawnBossEnemy() {
     size: 55,
     speed: 0.45 * enemySpeedMultiplier,
     color: '#a855f7',
-    health: 5,
+    health: 4,
     type: 'boss',
     angle: Math.random() * Math.PI * 2
   });
@@ -348,6 +352,29 @@ function createExplosion(x, y, color = '#f97316', count = 16, power = 6) {
   }
 }
 
+function createFloatingText(text, x, y, color = 'lime') {
+  floatingTexts.push({
+    text: text,
+    x: x,
+    y: y,
+    life: 45,
+    color: color
+  });
+}
+
+function updateFloatingTexts() {
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const t = floatingTexts[i];
+
+    t.y -= 1;
+    t.life--;
+
+    if (t.life <= 0) {
+      floatingTexts.splice(i, 1);
+    }
+  }
+}
+
 function updateParticles() {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
@@ -389,14 +416,18 @@ function checkCollisions() {
         enemies[j].health -= 1;
 
         if (enemies[j].type === 'boss') {
-          score += 25;
+          score += 10;
         }
 
         if (enemies[j].health <= 0) {
           if (enemies[j].type === 'boss') {
-            createExplosion(enemies[j].x, enemies[j].y, '#a855f7', 40, 10);
-            createExplosion(enemies[j].x, enemies[j].y, '#facc15', 30, 12);
-            screenShake = 28;
+            score += 25;
+            createFloatingText('+25', enemies[j].x, enemies[j].y, 'lime');
+
+            createExplosion(enemies[j].x, enemies[j].y, '#a855f7', 50, 12);
+            createExplosion(enemies[j].x, enemies[j].y, '#facc15', 40, 14);
+
+            screenShake = 30;
           } else {
             score += 10;
           }
@@ -523,6 +554,17 @@ function drawParticles() {
   }
 }
 
+function drawFloatingTexts() {
+  for (let t of floatingTexts) {
+    ctx.fillStyle = t.color;
+    ctx.globalAlpha = t.life / 45;
+    ctx.font = '26px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.globalAlpha = 1;
+  }
+}
+
 function drawHealthPacks() {
   for (let h of healthPacks) {
     ctx.fillStyle = h.color;
@@ -552,6 +594,7 @@ function draw() {
   drawBullets();
   drawEnemies();
   drawParticles();
+  drawFloatingTexts();
 
   ctx.restore();
 }
