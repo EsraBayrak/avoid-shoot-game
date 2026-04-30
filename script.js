@@ -27,7 +27,7 @@ let menuTime = 0;
 let enemySpawnTimer = 0;
 let healthPackTimer = 0;
 let difficultyTimer = 0;
-let enemySpawnInterval = 1400;
+let enemySpawnInterval = 1800;
 let enemySpeedMultiplier = 1;
 let lastTime = 0;
 
@@ -39,7 +39,7 @@ const player = {
   x: canvas.width / 2,
   y: canvas.height / 2,
   size: 30,
-  speed: 5,
+  speed: 4,
   color: '#4ade80',
   health: MAX_HEALTH,
   facingX: 1,
@@ -82,7 +82,7 @@ function startGame() {
   enemySpawnTimer = 0;
   healthPackTimer = 0;
   difficultyTimer = 0;
-  enemySpawnInterval = 1400;
+  enemySpawnInterval = 1800;
   enemySpeedMultiplier = 1;
   screenShake = 0;
 
@@ -115,7 +115,7 @@ function resetGame() {
   enemySpawnTimer = 0;
   healthPackTimer = 0;
   difficultyTimer = 0;
-  enemySpawnInterval = 1400;
+  enemySpawnInterval = 1800;
   enemySpeedMultiplier = 1;
   screenShake = 0;
 
@@ -176,10 +176,10 @@ function update(deltaTime) {
     healthPackTimer = 0;
   }
 
-  if (difficultyTimer >= 10000) {
+  if (difficultyTimer >= 12000) {
     difficultyTimer = 0;
-    enemySpeedMultiplier += 0.05;
-    enemySpawnInterval = Math.max(650, enemySpawnInterval - 40);
+    enemySpeedMultiplier += 0.03;
+    enemySpawnInterval = Math.max(800, enemySpawnInterval - 25);
   }
 
   if (screenShake > 0) screenShake--;
@@ -193,12 +193,12 @@ function update(deltaTime) {
 }
 
 function updateLevel() {
-  const newLevel = Math.floor(gameTime / 7) + 1;
+  const newLevel = Math.floor(gameTime / 10) + 1;
 
   if (newLevel > level) {
     level = newLevel;
-    enemySpeedMultiplier += 0.08;
-    enemySpawnInterval = Math.max(600, enemySpawnInterval - 60);
+    enemySpeedMultiplier += 0.05;
+    enemySpawnInterval = Math.max(750, enemySpawnInterval - 40);
 
     if (level === 2 || level % 3 === 0) {
       spawnBossEnemy();
@@ -241,7 +241,7 @@ function shootBullet() {
     x: player.x,
     y: player.y,
     size: 8,
-    speed: 8,
+    speed: 7,
     dx: player.facingX,
     dy: player.facingY,
     color: '#facc15'
@@ -273,7 +273,7 @@ function spawnEnemy() {
     x: pos.x,
     y: pos.y,
     size: 28,
-    speed: (0.8 + Math.random() * 0.6) * enemySpeedMultiplier,
+    speed: (0.6 + Math.random() * 0.4) * enemySpeedMultiplier,
     color: '#ef4444',
     health: 1,
     type: 'normal',
@@ -288,7 +288,7 @@ function spawnBossEnemy() {
     x: pos.x,
     y: pos.y,
     size: 55,
-    speed: 0.45 * enemySpeedMultiplier,
+    speed: 0.35 * enemySpeedMultiplier,
     color: '#a855f7',
     health: 4,
     type: 'boss',
